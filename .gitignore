@@ -3,6 +3,10 @@ build/
 _build/
 *.build
 
+# Install prefixes used for local verification
+.install/
+install/
+
 # CMake
 CMakeCache.txt
 CMakeFiles/

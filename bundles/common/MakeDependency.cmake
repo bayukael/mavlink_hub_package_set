@@ -11,6 +11,10 @@
 
 include(ExternalProject)
 
+# Directory of THIS helper file (bundles/common). Captured at include time,
+# because CMAKE_CURRENT_LIST_DIR inside a function refers to the caller's dir.
+set(_MHP_COMMON_DIR "${CMAKE_CURRENT_LIST_DIR}")
+
 # ---------------------------------------------------------------------------
 # add_mhp_dependency(<name>
 #   GIT_REPOSITORY <url>
@@ -47,7 +51,7 @@ function(add_mhp_dependency name)
     set(_patch)
     if(MHP_INIT_SUBMODULES)
         set(_submodule_script
-            "${CMAKE_CURRENT_LIST_DIR}/init_submodules.cmake")
+            "${_MHP_COMMON_DIR}/init_submodules.cmake")
         set(_patch
             PATCH_COMMAND "${CMAKE_COMMAND}"
                 "-DSOURCE_DIR=<SOURCE_DIR>"
