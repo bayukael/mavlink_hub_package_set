@@ -14,6 +14,7 @@ mavlink_hub_package_set/
 ├── CMakeLists.txt          # reads -DBUNDLE=<name>; includes bundles/<name>.cmake
 ├── bundles/
 │   ├── deps.cmake          # the mavlink_hub dependencies bundle (-DBUNDLE=deps)
+│   ├── minimal.cmake       # the minimal mavlink_hub bundle (-DBUNDLE=minimal)
 │   └── common/             # helpers shared by bundles
 │       ├── MakeDependency.cmake    # wraps a repo as an ExternalProject
 │       └── init_submodules.cmake   # best-effort submodule init (HTTPS override)
@@ -25,6 +26,7 @@ mavlink_hub_package_set/
 | Bundle | Contents | Notes |
 | ------ | -------- | ----- |
 | `deps` | `byte_transport`, `mavlink_endpoint`, `mavlink_hub_sdk` | Dependency-only. No plugins, no Gazebo/serial pieces, no runnable app. |
+| `minimal` | `byte_transport`, `mavlink_endpoint`, `mavlink_hub_sdk`, `mavlink_hub` | Runs the minimal `mavlink_hub` app. No plugins, no Gazebo/serial pieces. |
 
 ## Requirements
 
@@ -73,6 +75,37 @@ It is deliberately dependency-only: it does **not** build the mavlink_hub app
 itself, nor any plugin (heartbeat generator, UDP transport), nor any
 Gazebo/serial piece (`mavlink_hub_gz_agent`, `serial_byte_transport`,
 `serial_device`). Those belong to later bundles.
+
+### What the `minimal` bundle builds
+
+The `minimal` bundle is the runnable minimal mavlink_hub. It builds the three
+`deps` components (byte_transport, mavlink_endpoint, mavlink_hub_sdk) and then
+the `mavlink_hub` app itself on top of them, in dependency order:
+
+1. **byte_transport** — `PendarlabByteTransport` (target `pendarlab::ByteTransport`)
+2. **mavlink_endpoint** — `PendarlabMavlinkEndpoint` (target `pendarlab::MavlinkEndpoint`)
+3. **mavlink_hub_sdk** — `PendarlabMavlinkHubSdk` (target `pendarlab::MavlinkHubSdk`)
+4. **mavlink_hub** — the runnable CLI application (`mavlink_hub` executable)
+
+The `mavlink_hub` dependency is configured as an ExternalProject against the
+same shared install prefix, so it discovers the three dependencies through
+`CMAKE_PREFIX_PATH`. Build it with:
+
+```sh
+cmake -S . -B build-minimal -DBUNDLE=minimal -DCMAKE_INSTALL_PREFIX=<prefix>
+cmake --build build-minimal -j8
+```
+
+The `mavlink_hub` executable is produced in the bundle's build tree at
+`build-minimal/_deps/mavlink_hub/src/mavlink_hub-build/mavlink_hub`; the
+executable already carries an `$ORIGIN`/`<prefix>/lib` RUNPATH, so it runs
+directly, e.g. `build-minimal/_deps/mavlink_hub/src/mavlink_hub-build/mavlink_hub
+--help`.
+
+Like the `deps` bundle, it is deliberately minimal: it does **not** build any
+plugin (heartbeat generator, UDP transport) nor any Gazebo/serial piece
+(`mavlink_hub_gz_agent`, `serial_byte_transport`, `serial_device`). Those belong
+to the PX4 HITL plugin bundle.
 
 ## Bundle mechanism
 
