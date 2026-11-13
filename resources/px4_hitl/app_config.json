@@ -1,0 +1,28 @@
+{
+  "agent_lib_list": [
+    {
+      "name": "heartbeat_generator",
+      "path": "<PREFIX>/lib/libmavlink_hub_heartbeat_generator.so",
+      "sym": "getHeartbeatAgentDefinition"
+    },
+    {
+      "name": "gz_agent",
+      "path": "<PREFIX>/lib/libmavlink_hub_gz_agent.so",
+      "sym": "getGzAgentDefinition"
+    }
+  ],
+  "transport_lib_list": [
+    {
+      "name": "SerialByteTransport",
+      "path": "<PREFIX>/lib/libpendarlab-serial_byte_transport.so",
+      "sym": "getSerialByteTransportDefinition"
+    },
+    {
+      "name": "UdpByteTransport",
+      "path": "<PREFIX>/lib/libpendarlab-udp_byte_transport.so",
+      "sym": "getUdpByteTransportDefinition"
+    }
+  ],
+  "path_to_startup_user_plan": "<PREFIX>/share/mavlink_hub_package_set/px4_hitl/user_plan_udp.json",
+  "apply_user_plan_on_startup": true
+}

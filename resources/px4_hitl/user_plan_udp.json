@@ -1,0 +1,39 @@
+{
+  "policy": "best_effort",
+  "endpoint_list": [
+    {
+      "name": "px4_udp",
+      "type": "UdpByteTransport",
+      "config": {
+        "local_port": "14550",
+        "remote_address": "127.0.0.1",
+        "remote_port": "14540",
+        "read_timeout_ms": "1000",
+        "write_timeout_ms": "1000"
+      },
+      "connect_on_create": true
+    }
+  ],
+  "agent_list": [
+    {
+      "name": "heartbeat",
+      "type": "heartbeat_generator",
+      "config": {
+        "heartbeat_freq": "1"
+      },
+      "start_on_create": true
+    },
+    {
+      "name": "gz_bridge",
+      "type": "gz_agent",
+      "config": {
+        "vehicle_name": "iris",
+        "world_name": "default",
+        "mavlink_endpoint_name": "px4_udp",
+        "use_topic_generator": "true",
+        "send_freq": "250"
+      },
+      "start_on_create": true
+    }
+  ]
+}
