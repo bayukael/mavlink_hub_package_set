@@ -39,3 +39,15 @@ endif()
 
 message(STATUS "Configuring bundle: ${BUNDLE}")
 include("${BUNDLE_DIR}/${BUNDLE}.cmake")
+
+# ---------------------------------------------------------------------------
+# Install the shipped example resources (UserPlan documents + app config) so a
+# bundle consumer can find them under <prefix>/share/... . The app config uses
+# a <PREFIX> placeholder for the plugin .so paths and the plan path; substitute
+# the real install prefix at runtime (see resources/px4_hitl/README.md).
+# ---------------------------------------------------------------------------
+install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/resources/"
+    DESTINATION "share/mavlink_hub_package_set"
+    FILES_MATCHING
+        PATTERN "*.json"
+        PATTERN "*.md")

@@ -24,17 +24,25 @@ set(_MHP_COMMON_DIR "${CMAKE_CURRENT_LIST_DIR}")
 #   [CMAKE_ARGS <arg>...]
 #   [EXTRA_ARGS <arg>...])                    # appended after the standard args
 #   [SKIP_INSTALL]                            # don't run the dependency's install step
+#   [INSTALL_COPY <rel-file>...]              # copy built artifacts from <BINARY_DIR> into <prefix>/lib
 #
 # By default the ExternalProject runs its normal CMake install step (each
 # dependency is expected to install its own headers/libs/configs into the shared
 # install prefix). Pass SKIP_INSTALL to skip the install step entirely (for
 # upstreams whose build tree already carries the artifact, e.g. a runnable
 # executable that is run straight from its build directory).
+#
+# Pass INSTALL_COPY for upstreams that produce artifacts but define no install
+# rules (e.g. runtime plugin .so files). Each <rel-file> names a file relative to
+# the dependency's build directory (<BINARY_DIR>); on install it is copied into
+# the shared install prefix's lib/ directory, so a runtime loader (e.g. mavlink_hub
+# dlopen'ing agent/transport plugins) can find it at <prefix>/lib/<rel-file>.
+# INSTALL_COPY and SKIP_INSTALL are mutually exclusive.
 function(add_mhp_dependency name)
     cmake_parse_arguments(MHP
         "SKIP_INSTALL"
         "GIT_REPOSITORY;GIT_TAG"
-        "DEPENDS;INIT_SUBMODULES;CMAKE_ARGS;EXTRA_ARGS"
+        "DEPENDS;INIT_SUBMODULES;CMAKE_ARGS;EXTRA_ARGS;INSTALL_COPY"
         ${ARGN}
     )
 
@@ -51,14 +59,25 @@ function(add_mhp_dependency name)
     endif()
 
     # Optional install-command override. By default the ExternalProject runs the
-    # dependency's own CMake install step; SKIP_INSTALL disables it. We use a
-    # harmless no-op command (rather than an empty INSTALL_COMMAND) because an
-    # empty string expanded through a variable is dropped by CMake's argument
-    # handling, which would silently fall back to the default install step.
+    # dependency's own CMake install step. SKIP_INSTALL disables it; INSTALL_COPY
+    # replaces it with a copy of the built artifacts into <prefix>/lib. We use a
+    # harmless no-op command for SKIP_INSTALL (rather than an empty
+    # INSTALL_COMMAND) because an empty string expanded through a variable is
+    # dropped by CMake's argument handling, which would silently fall back to the
+    # default install step.
     set(_install_args)
     if(MHP_SKIP_INSTALL)
         set(_install_args
             INSTALL_COMMAND "${CMAKE_COMMAND}" -E echo "install step skipped")
+    elseif(MHP_INSTALL_COPY)
+        set(_copy_args)
+        foreach(_f IN LISTS MHP_INSTALL_COPY)
+            list(APPEND _copy_args
+                COMMAND "${CMAKE_COMMAND}" -E copy
+                    "<BINARY_DIR>/${_f}"
+                    "${CMAKE_INSTALL_PREFIX}/lib/${_f}")
+        endforeach()
+        set(_install_args INSTALL_COMMAND ${_copy_args})
     endif()
 
     # Optional submodule initialization. Because some upstreams declare their
