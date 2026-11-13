@@ -23,10 +23,16 @@ set(_MHP_COMMON_DIR "${CMAKE_CURRENT_LIST_DIR}")
 #   [INIT_SUBMODULES <https-url-mapping...>]  # in the form "rel/path:https://.."
 #   [CMAKE_ARGS <arg>...]
 #   [EXTRA_ARGS <arg>...])                    # appended after the standard args
-# ---------------------------------------------------------------------------
+#   [SKIP_INSTALL]                            # don't run the dependency's install step
+#
+# By default the ExternalProject runs its normal CMake install step (each
+# dependency is expected to install its own headers/libs/configs into the shared
+# install prefix). Pass SKIP_INSTALL to skip the install step entirely (for
+# upstreams whose build tree already carries the artifact, e.g. a runnable
+# executable that is run straight from its build directory).
 function(add_mhp_dependency name)
     cmake_parse_arguments(MHP
-        ""
+        "SKIP_INSTALL"
         "GIT_REPOSITORY;GIT_TAG"
         "DEPENDS;INIT_SUBMODULES;CMAKE_ARGS;EXTRA_ARGS"
         ${ARGN}
@@ -42,6 +48,17 @@ function(add_mhp_dependency name)
     set(_dep_args)
     if(MHP_DEPENDS)
         set(_dep_args DEPENDS ${MHP_DEPENDS})
+    endif()
+
+    # Optional install-command override. By default the ExternalProject runs the
+    # dependency's own CMake install step; SKIP_INSTALL disables it. We use a
+    # harmless no-op command (rather than an empty INSTALL_COMMAND) because an
+    # empty string expanded through a variable is dropped by CMake's argument
+    # handling, which would silently fall back to the default install step.
+    set(_install_args)
+    if(MHP_SKIP_INSTALL)
+        set(_install_args
+            INSTALL_COMMAND "${CMAKE_COMMAND}" -E echo "install step skipped")
     endif()
 
     # Optional submodule initialization. Because some upstreams declare their
@@ -65,6 +82,7 @@ function(add_mhp_dependency name)
         ${_patch}
         PREFIX "${CMAKE_CURRENT_BINARY_DIR}/_deps/${name}"
         INSTALL_DIR "${CMAKE_INSTALL_PREFIX}"
+        ${_install_args}
         CMAKE_ARGS
             "-DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}"
             "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"

@@ -1,6 +1,7 @@
 # Build artifacts
 build/
 _build/
+build-*/
 *.build
 
 # Install prefixes used for local verification
